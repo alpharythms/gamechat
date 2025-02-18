@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chat Application
 
-## Getting Started
+## Logging System
 
-First, run the development server:
+The application uses a privacy-focused logging system that behaves differently in development and production environments.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Development Environment
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+In development, the logger provides detailed information to assist with debugging:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- All log levels enabled (debug, info, warn, error)
+- Full request/response logging
+- Character responses and user messages
+- Detailed error stacks
+- Socket connection events
+- API timing information
+- Log rotation: 5MB file size, 3-day retention
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Production Environment
 
-## Learn More
+In production, logging is minimal to protect user privacy:
 
-To learn more about Next.js, take a look at the following resources:
+- Only error-level logging enabled
+- No logging of user messages or character responses
+- No request/response bodies
+- Limited metadata logging:
+  - HTTP status codes
+  - Request duration
+  - HTTP method
+  - Path information
+  - Error types
+  - Timestamps
+- Log rotation: 1MB file size, 1-day retention
+- Compressed archives
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Log File Locations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Development: `./logs/app-[DATE].log`
+- Production: `./logs/app-[DATE].log` (minimal content)
+- Current log symlink: `./logs/current.log`
+- Audit file: `./logs/audit.json`
 
-## Deploy on Vercel
+### Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NODE_ENV`: Controls logging behavior ('development' or 'production')
+- `DISABLE_LOGGING`: Set to 'true' to completely disable logging in production
+- `ENABLE_DEBUG_LOGS`: Set to 'true' to enable debug logs even in production (not recommended)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Utility Functions
+
+- `sanitizeData()`: Redacts sensitive information (passwords, tokens, etc.)
+- `truncateData()`: Limits large data (500 char limit, 10 items for arrays)
+- `filterProductionMetadata()`: Ensures only allowed metadata is logged in production
+
+### Browser Console Logging
+
+- Development: All log levels shown
+- Production: Only errors shown with minimal metadata
+- API errors always logged with safe metadata
+
+### Best Practices
+
+1. Never log user messages or character responses in production
+2. Use error logging for system errors only
+3. Keep metadata minimal in production
+4. Use appropriate log levels:
+   - debug: Detailed debugging (dev only)
+   - info: General operational events (dev only)
+   - warn: Warning conditions (dev only)
+   - error: Error conditions (both dev and prod)

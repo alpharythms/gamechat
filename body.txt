@@ -1,0 +1,11 @@
+{
+    "model": "deepseek-r1-671b",
+    "messages": [
+        {
+            "role": "user",
+            "content": "<SYSTEM_PROMPT>\nYou are a helpful and concise assistant that explains scientific concepts clearly. Always provide a brief summary before diving into details. Do not use overly technical jargon unless necessary.</SYSTEM_PROMPT>\n\nUser: Why is the sky blue?<|endofsentence|>Assistant: <think>\n"
+        }
+    ],
+    "temperature": 0.6,
+    "stop": ["<|endofsentence|>"]
+}

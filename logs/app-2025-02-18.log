@@ -1,0 +1,5 @@
+[2025-02-18T19:04:20.339Z] INFO: Socket connected {"id":"vMreETnV-x81HbwyAAAB"}
+[2025-02-18T19:04:22.343Z] INFO: Socket message received {"type":"introduction","socketId":"vMreETnV-x81HbwyAAAB","messageData":"{\"type\":\"introduction\",\"socketId\":\"vMreETnV-x81HbwyAAAB\"}"}
+[2025-02-18T19:04:39.739Z] ERROR: Socket message error {"error":"fetch failed","socketId":"vMreETnV-x81HbwyAAAB"}
+[2025-02-18T19:04:39.739Z] ERROR: Fetch error {"error":"fetch failed","socketId":"vMreETnV-x81HbwyAAAB"}
+[2025-02-18T19:04:39.740Z] ERROR: Socket message error {"error":"fetch failed","socketId":"vMreETnV-x81HbwyAAAB"}

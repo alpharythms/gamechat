@@ -28,59 +28,78 @@ export function useCharacterChat() {
   const [completedResponses, setCompletedResponses] = useState(0)
   const isLoadingRef = useRef(false)
 
-  // Track completion state
-  const completionState = useRef(new Map<number, boolean>())
+  // Track states
   const [isComplete, setIsComplete] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Initialize completion state
-  useEffect(() => {
-    characters.forEach(char => {
-      completionState.current.set(char.position, false)
-    })
+  // Helper to clear all timers
+  const clearAllTimers = useCallback(() => {
+    if (responseTracker.current.interval) {
+      clearInterval(responseTracker.current.interval)
+      responseTracker.current.interval = undefined
+    }
+    if (responseTracker.current.timeout) {
+      clearTimeout(responseTracker.current.timeout)
+      responseTracker.current.timeout = undefined
+    }
   }, [])
 
-  // Update completed responses count and initialization state when characters update
-  useEffect(() => {
-    const completed = characters.filter(char => !char.isLoading && char.response && char.progress === 100).length
-    setCompletedResponses(completed)
+  // Reset all states
+  const resetStates = useCallback(() => {
+    setIsComplete(false)
+    setIsInitialized(false)
+    clearAllTimers()
+  }, [clearAllTimers])
 
-    // Update completion state
-    characters.forEach(char => {
-      if (!char.isLoading && char.response && char.progress === 100) {
-        completionState.current.set(char.position, true)
-      }
-    })
-
-    // Check if all positions are complete
-    const allComplete = characters.every(char => !char.isLoading && char.response && char.progress === 100)
-    if (allComplete && !isComplete) {
-      setIsComplete(true)
-      setIsInitialized(true)
-      logInfo('All characters completed', {
-        characters: characters.map(char => ({
-          slug: char.slug,
-          progress: char.progress,
-          isLoading: char.isLoading,
-          hasResponse: !!char.response
-        }))
-      })
-      // Clear any response tracking timers
-      if (responseTracker.current.interval) {
-        clearInterval(responseTracker.current.interval)
-      }
-      if (responseTracker.current.timeout) {
-        clearTimeout(responseTracker.current.timeout)
-      }
-    }
-  }, [characters, isComplete])
-
-  // Reset initialization state when mode changes
+  // Reset states when mode changes
   useEffect(() => {
     if (mode === 'intro') {
-      setIsInitialized(false)
+      resetStates()
     }
-  }, [mode])
+  }, [mode, resetStates])
+
+  // Track completion state
+  useEffect(() => {
+    // Update completed responses count
+    const completed = characters.filter(char => {
+      const hasResponse = !!char.response && char.response.trim().length > 0
+      const isFullyLoaded = !char.isLoading && char.progress === 100
+      const hasNoError = !char.error
+      return hasResponse && isFullyLoaded && hasNoError
+    }).length
+    setCompletedResponses(completed)
+
+    // Check if all characters are truly complete
+    const allComplete = characters.every(char => {
+      const hasResponse = !!char.response && char.response.trim().length > 0
+      const isFullyLoaded = !char.isLoading && char.progress === 100
+      const hasNoError = !char.error
+      return hasResponse && isFullyLoaded && hasNoError
+    })
+
+    if (allComplete && !isComplete) {
+      logInfo('All characters truly completed', {
+        characters: characters.map(char => ({
+          slug: char.slug,
+          response: !!char.response && char.response.trim().length > 0,
+          isLoading: char.isLoading,
+          progress: char.progress,
+          error: char.error
+        }))
+      })
+      clearAllTimers()
+      setIsComplete(true)
+      setIsInitialized(true)
+    }
+  }, [characters, isComplete, clearAllTimers])
+
+  // Handle mode transition
+  useEffect(() => {
+    if (isComplete && isInitialized && mode === 'intro') {
+      logInfo('Transitioning to story mode')
+      setMode('story')
+    }
+  }, [isComplete, isInitialized, mode, setMode])
 
   // Update status message when responses complete
   useEffect(() => {
@@ -194,37 +213,15 @@ export function useCharacterChat() {
           // Send introduction message
           logInfo('Sending introduction message')
           await new Promise<void>((resolve, reject) => {
-          // Reset states
-          completionState.current.clear()
-          characters.forEach(char => {
-            completionState.current.set(char.position, false)
-          })
-          setIsComplete(false)
-          setIsInitialized(false)
+          // Reset states before starting
+          resetStates()
 
           // Set up response tracking before sending message
           responseTracker.current.interval = setInterval(() => {
-            // Check if all characters have reached 100% progress
-            const allComplete = characters.every(char => 
-              !char.isLoading && char.response && char.progress === 100
-            )
-            
-            if (allComplete) {
-              logInfo('All characters completed initialization', {
-                characters: characters.map(char => ({
-                  slug: char.slug,
-                  progress: char.progress,
-                  isLoading: char.isLoading,
-                  hasResponse: !!char.response
-                }))
-              })
-              if (responseTracker.current.interval) {
-                clearInterval(responseTracker.current.interval)
-              }
-              if (responseTracker.current.timeout) {
-                clearTimeout(responseTracker.current.timeout)
-              }
-              setIsInitialized(true)
+            // Let the useEffect handle completion tracking
+            // Just check if we're complete to resolve
+            if (isComplete) {
+              clearAllTimers()
               resolve()
             }
           }, 500)
